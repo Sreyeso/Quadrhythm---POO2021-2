@@ -103,10 +103,10 @@ class casilla{
         this.color=('aquamarine');
       break;
       case(5): //Casilla azul (tecla z)
-        this.color=('firebrick');
+        this.color=('lightskyblue');
       break;
       case(6): //Casilla roja (tecla x)
-        this.color=('lightskyblue');
+        this.color = ('firebrick');
       break;
       default:
         this.color=('purple');
@@ -154,10 +154,10 @@ function mouseClicked(){
   inicializarlvl(7,3,
     [
       "00n","00n","00n","00n","00n","00n","00n",
-      "00n","20n","52n","20n","62n","30n","00n",
+      "00n","20n","52n","10n","62n","30n","00n",
       "00n","00n","00n","00n","00n","00n","00n"
     ],
-    0,0,1,60);
+    0,0,1,30);
 }
 
 function draw() {

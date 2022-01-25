@@ -1,8 +1,6 @@
 //Variables gráficas
 let width;        //Ancho de la ventana
 let height;       //Largo de la ventana
-let ajustex;      //Centrado en x dinamico
-let ajustey;      //Centrado en y dinamico
 
 //Variables del juego
 let px;           //Coordenada en x del jugador 
@@ -20,18 +18,20 @@ class nivel{
   //dependiendo del nivel, puede haber o no tutorial.
   //añadir metodo para imprimir este nombre encima del nivel, 
   //y el tutorial por debajo
-  constructor(filas,columnas,layout,x,y,tipolvl,tamcasilla){
+  constructor(filas,columnas,layout,tipolvl,tamcasilla){
     this.f=filas;
     this.c=columnas;
     this.layout=layout;
-    this.x=x;
-    this.y=y;
     this.tipolvl=tipolvl;
     this.tablero=[];
     this.xini=0;
     this.yini=0;
+    this.xfin=0;
+    this.yfin=0;
     this.tamcasilla=tamcasilla;
     this.inicializar();  
+    this.ajustex=((width-(this.f*this.tamcasilla))*0.5);
+    this.ajustey=((height-(this.c*this.tamcasilla))*0.5);
   }
   inicializar(){
     for(let i=0;i<this.c;i++){
@@ -56,8 +56,8 @@ class nivel{
   dibujar(){
     for(let i=0;i<this.c;i++){
       for(let j=0;j<this.f;j++){
-        let x = (ajustex*(2/this.f))+(j*this.tamcasilla);
-        let y = (ajustey*(2/this.c))+(i*this.tamcasilla);
+        let x = this.ajustex+(j*this.tamcasilla);
+        let y = this.ajustey+(i*this.tamcasilla);
         let cas = this.tablero[i][j];
         stroke("black");
         fill(cas.color);
@@ -103,10 +103,10 @@ class casilla{
         this.color=('aquamarine');
       break;
       case(5): //Casilla azul (tecla z)
-        this.color=('firebrick');
+        this.color=('lightskyblue');
       break;
       case(6): //Casilla roja (tecla x)
-        this.color=('lightskyblue');
+        this.color = ('firebrick');
       break;
       default:
         this.color=('purple');
@@ -137,10 +137,9 @@ function setup() {
   canvas=createCanvas(windowWidth, windowHeight);
   canvas.position=(0,0);
 
-  //Declarar valores por defecto (lo ideal es que sean dinamicos)
   width=windowWidth;
   height=windowHeight;
-
+  //Declarar valores por defecto
 }
 
 //Ajuste dinamico de la distribución
@@ -157,7 +156,7 @@ function mouseClicked(){
       "00n","20n","52n","10n","62n","30n","00n",
       "00n","00n","00n","00n","00n","00n","00n"
     ],
-    0,0,1,30);
+    1,45); 
 }
 
 function draw() {
@@ -166,11 +165,14 @@ function draw() {
 
   
   if(game){
+
     //Imprimir el nivel
     lvl.dibujar();
+
     //Imprimir al jugador
-    let x = (ajustex*(2/lvl.f))+(int(py)*lvl.tamcasilla);
-    let y = (ajustey*(2/lvl.c))+(int(px)*lvl.tamcasilla);
+    let x = lvl.ajustex+(int(py)*lvl.tamcasilla);
+    let y = lvl.ajustey+(int(px)*lvl.tamcasilla);
+
     strokeWeight(5.5);
     stroke("darkorchid");
     noFill();
@@ -194,7 +196,4 @@ function draw() {
     }
   }
   
-  //Elementos dinamicos
-  ajustex=(width/2);
-  ajustey=(height/2);
 }

@@ -187,7 +187,7 @@ function startGame() {
 }
 
 //(Posible funcion para el editor, talvez sea mejor encapsularla en clase)
-//perdoname por las atricidades que voy a cometer en este codigo
+//perdoname por las atrocidades que voy a cometer en este codigo
 //altamente WIP
 let elvl;
 //let elx;
@@ -221,7 +221,7 @@ async function startEditor(){
         '9': '9'
     
   },
-    inputPlaceholder: 'Selecciona un tamanio',
+    inputPlaceholder: 'Selecciona un tamaño',
     showCancelButton: true,
     inputValidator: (value) => {
       return new Promise((resolve) => {
@@ -290,8 +290,6 @@ function draw() {
   menu.background('red');
   menu.text('Menu Principal',10,10); */
   
-  
-
   if (game) {
 
     //Imprimir el nivel

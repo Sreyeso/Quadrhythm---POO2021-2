@@ -10,6 +10,7 @@ let gy;           //Coordenada en y de la meta
 
 //Elementos DOM
 let canvas;       
+let test="Bien";
 
 //Clase principal
 class nivel{
@@ -59,6 +60,7 @@ class nivel{
         let x = this.ajustex+(j*this.tamcasilla);
         let y = this.ajustey+(i*this.tamcasilla);
         let cas = this.tablero[i][j];
+        push();
         stroke("black");
         fill(cas.color);
         strokeWeight(1);
@@ -71,6 +73,7 @@ class nivel{
             text(cas.n,x+this.tamcasilla/2.6,y+this.tamcasilla/1.5);
           }  
         }
+        pop();
       }
     }
   }
@@ -112,6 +115,11 @@ class casilla{
         this.color=('purple');
     }
   }
+  completar(){
+    this.tipo=4;
+    this.inicializar();
+  }
+  
 }
 
 //Variables de prueba
@@ -139,6 +147,15 @@ function setup() {
 
   width=windowWidth;
   height=windowHeight;
+
+  inicializarlvl(7,3,
+    [
+      "00n","00n","00n","00n","00n","00n","00n",
+      "00n","20n","52n","10n","62n","30n","00n",
+      "00n","00n","00n","00n","00n","00n","00n"
+    ],
+    1,45);  
+
   //Declarar valores por defecto
 }
 
@@ -148,7 +165,6 @@ function windowResized(){
   height=windowHeight;
 }
 
-//(Temporal, la seleccion de niveles sera controlada por una variable)
 function mouseClicked(){
   inicializarlvl(7,3,
     [
@@ -156,14 +172,13 @@ function mouseClicked(){
       "00n","20n","52n","10n","62n","30n","00n",
       "00n","00n","00n","00n","00n","00n","00n"
     ],
-    1,45); 
+    1,45);  
 }
 
 function draw() {
 
   background('mediumpurple');
-
-  
+  text(test,50,50);
   if(game){
 
     //Imprimir el nivel
@@ -173,10 +188,12 @@ function draw() {
     let x = lvl.ajustex+(int(py)*lvl.tamcasilla);
     let y = lvl.ajustey+(int(px)*lvl.tamcasilla);
 
+    push();
     strokeWeight(5.5);
     stroke("darkorchid");
     noFill();
     rect(x,y,lvl.tamcasilla,lvl.tamcasilla);
+    pop();
 
     //Control del jugador
     //CONDICIONES DE MOVIMIENTO
@@ -185,15 +202,27 @@ function draw() {
     //al salir de una casilla, la anterior se marca como completada
     //No se puede mover hacia una casilla completada
     //No se puede mover desde una casilla cuyo numero no sea 0
-    
-    if(keyIsDown(RIGHT_ARROW)){
-      py+=0.5;
-    }
     //Condicion de victoria 
     if(px==lvl.xfin && py==lvl.yfin){
       print("gg");
       game=false;
     }
+    
   }
-  
+}
+
+function keyPressed(){
+  if(keyCode === (RIGHT_ARROW)){ 
+    if(
+      lvl.tablero[px][py+1].tipo!=0 &&
+      lvl.tablero[px][py].n==0
+      ){
+      py+=1;
+      lvl.tablero[px][py-1].completar();
+      test='Bien';
+    }else{
+      test='mal';
+    }
+    
+  }
 }

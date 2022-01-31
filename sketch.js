@@ -11,6 +11,7 @@ let gy;           //Coordenada en y de la meta
 //Elementos DOM
 let canvas;
 let menu;
+let test="bien";
 //let button;
 
 //Clase principal
@@ -20,20 +21,20 @@ class nivel {
   //dependiendo del nivel, puede haber o no tutorial.
   //añadir metodo para imprimir este nombre encima del nivel, 
   //y el tutorial por debajo
-  constructor(filas, columnas, layout, tipolvl, tamcasilla) {
-    this.f = filas;
-    this.c = columnas;
-    this.layout = layout;
-    this.tipolvl = tipolvl;
-    this.tablero = [];
-    this.xini = 0;
-    this.yini = 0;
-    this.xfin = 0;
-    this.yfin = 0;
-    this.tamcasilla = tamcasilla;
-    this.inicializar();
-    this.ajustex = ((width - (this.f * this.tamcasilla)) * 0.5);
-    this.ajustey = ((height - (this.c * this.tamcasilla)) * 0.5);
+  constructor(filas,columnas,layout,tipolvl,tamcasilla){
+    this.f=filas;
+    this.c=columnas;
+    this.layout=layout;
+    this.tipolvl=tipolvl;
+    this.tablero=[];
+    this.xini=0;
+    this.yini=0;
+    this.xfin=0;
+    this.yfin=0;
+    this.tamcasilla=tamcasilla;
+    this.inicializar();  
+    this.ajustex=((width-(this.f*this.tamcasilla))*0.5);
+    this.ajustey=((height-(this.c*this.tamcasilla))*0.5);
   }
   inicializar() {
     for (let i = 0; i < this.c; i++) {
@@ -61,6 +62,7 @@ class nivel {
         let x = this.ajustex + (j * this.tamcasilla);
         let y = this.ajustey + (i * this.tamcasilla);
         let cas = this.tablero[i][j];
+        push();
         stroke("black");
         fill(cas.color);
         strokeWeight(1);
@@ -73,6 +75,7 @@ class nivel {
             text(cas.n, x + this.tamcasilla / 2.6, y + this.tamcasilla / 1.5);
           }
         }
+        pop();
       }
     }
   }
@@ -114,6 +117,11 @@ class casilla {
         this.color = ('purple');
     }
   }
+  completar(){
+    this.tipo=4;
+    this.inicializar();
+  }
+  
 }
 
 //Variables de prueba
@@ -146,6 +154,16 @@ function setup() {
   showMenu();
   //menu.createButton('click me');
   //button.mousePressed(delete menu);
+
+  inicializarlvl(7,3,
+    [
+      "00n","00n","00n","00n","00n","00n","00n",
+      "00n","20n","52n","10n","62n","30n","00n",
+      "00n","00n","00n","00n","00n","00n","00n"
+    ],
+    1,45);  
+
+  //Declarar valores por defecto
 }
 
 //Ajuste dinamico de la distribución
@@ -183,7 +201,7 @@ function startGame() {
       "00n","20n","52n","10n","62n","30n","00n",
       "00n","00n","00n","00n","00n","00n","00n"
     ],
-    0,0,1,30);
+    1,45);  
 }
 
 //(Posible funcion para el editor, talvez sea mejor encapsularla en clase)
@@ -291,6 +309,7 @@ function draw() {
   menu.text('Menu Principal',10,10); */
   
   if (game) {
+  text(test,50,50);
 
     //Imprimir el nivel
     lvl.dibujar();
@@ -299,10 +318,12 @@ function draw() {
     let x = lvl.ajustex + (int(py) * lvl.tamcasilla);
     let y = lvl.ajustey + (int(px) * lvl.tamcasilla);
 
+    push();
     strokeWeight(5.5);
     stroke("darkorchid");
     noFill();
-    rect(x, y, lvl.tamcasilla, lvl.tamcasilla);
+    rect(x,y,lvl.tamcasilla,lvl.tamcasilla);
+    pop();
 
     //Control del jugador
     //CONDICIONES DE MOVIMIENTO
@@ -311,10 +332,6 @@ function draw() {
     //al salir de una casilla, la anterior se marca como completada
     //No se puede mover hacia una casilla completada
     //No se puede mover desde una casilla cuyo numero no sea 0
-
-    if (keyIsDown(RIGHT_ARROW)) {
-      py += 0.5;
-    }
     //Condicion de victoria 
     if (px == lvl.xfin && py == lvl.yfin) {
       print("gg");
@@ -341,6 +358,22 @@ function draw() {
       }
       )
     }
+    
   }
+}
 
+function keyPressed(){
+  if(keyCode === (RIGHT_ARROW)){ 
+    if(
+      lvl.tablero[px][py+1].tipo!=0 &&
+      lvl.tablero[px][py].n==0
+      ){
+      py+=1;
+      lvl.tablero[px][py-1].completar();
+      test='Bien';
+    }else{
+      test='mal';
+    }
+    
+  }
 }

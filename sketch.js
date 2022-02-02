@@ -154,26 +154,44 @@ class casilla {
 
   inicializar() {
     switch (this.tipo) {
-      case (0): //Casilla negra (limite del nivel)
+      case (0): //Casilla limite (limite del nivel)
           this.color = ('lightsteelblue');
+          if(this.n!=0){
+            this.n=0;
+          }
       break;
       case (1): //Casilla vacía (cualquier dirección)
           this.color = ('white');
+          if(this.n!=0){
+            this.n=0;
+          }
       break;
       case (2): //Casilla de inicio
           this.color = ('darkkhaki');
+          if(this.n!=0){
+            this.n=0;
+          }
       break;
       case (3): //Casilla final
           this.color = ('chartreuse');
+          if(this.n!=0){
+            this.n=0;
+          }
       break;
       case (4): //Casilla completada
           this.color = ('aquamarine');
       break;
       case (5): //Casilla azul (tecla z)
           this.color = ('lightskyblue');
+          if(this.n==0){
+            this.n=1;
+          }
       break;
       case (6): //Casilla roja (tecla x)
           this.color = ('firebrick');
+          if(this.n==0){
+            this.n=1;
+          }
       break;
       default:
         this.color = ('purple');
@@ -230,19 +248,13 @@ function setup() {
    //Elementos DOM
   score = createElement('h1',"");
 
-  inicializarlvl(7, 7,
+  inicializarlvl(2, 2,
     [
-      "00n","00n","00n","00n","00n","00n","00n",
-      "00n","20n","00n","00n","02n","30n","00n",
-      "00n","52n","00n","00n","00n","52n","00n",
-      "00n","10n","00n","00n","00n","10n","00n",
-      "00n","10n","00n","00n","00n","10n","00n",
-      "00n","62n","10n","65n","10n","62n","00n",
-      "00n","00n","00n","00n","00n","00n","00n",
+      "20n","00n",
+      "10n","30n"
     ],
     45,150); 
   
-   
 }
 
 //Ajuste dinamico de la distribución
@@ -410,7 +422,7 @@ function draw() {
     fill('red');
     rect(lvl._ajustex, //Coordenada x
     lvl._ajustey-lvl.tamcasilla, //Coordenada y
-    map(lvl.timer,0,lvl.timing,0,(4*lvl.tamcasilla)), //Ancho
+    map(lvl.timer,0,lvl.timing,0,((0.5*lvl.f)*lvl.tamcasilla)), //Ancho
     (0.2*lvl.tamcasilla)); //Largo
     pop();
     //Control de la barra de timing
@@ -533,58 +545,76 @@ function keyPressed(){
     case('1')://Juego
     switch(keyCode){
       case(RIGHT_ARROW):
-      if(
-        lvl.tablero[px][py+1].tipo!=0 &&
-        lvl.tablero[px][py].n==0 &&
-        lvl.tablero[px][py+1].tipo!=4
-        ){
-        py+=1;
-        lvl.tablero[px][py-1].completar();
-        s_normal.play();
-        hit();
+      if (py+1<lvl.f){
+        if(
+          lvl.tablero[px][py+1].tipo!=0 &&
+          lvl.tablero[px][py].n==0 &&
+          lvl.tablero[px][py+1].tipo!=4
+          ){
+          py+=1;
+          lvl.tablero[px][py-1].completar();
+          s_normal.play();
+          hit();
+          }else{
+            miss();
+          }
       }else{
         miss();
       }
       break;
       case(LEFT_ARROW):
-      if(
-        lvl.tablero[px][py-1].tipo!=0 &&
-        lvl.tablero[px][py].n==0 &&
-        lvl.tablero[px][py-1].tipo!=4
-        ){
-        py-=1;
-        lvl.tablero[px][py+1].completar();
-        s_normal.play();
-        hit();
+      if (py-1>0){
+        if(
+          lvl.tablero[px][py-1].tipo!=0 &&
+          lvl.tablero[px][py].n==0 &&
+          lvl.tablero[px][py-1].tipo!=4
+          ){
+          py-=1;
+          lvl.tablero[px][py+1].completar();
+          s_normal.play();
+          hit();
+          }else{
+            miss();
+          }
       }else{
         miss();
       }
       break;
       case(UP_ARROW):
-      if(
-        lvl.tablero[px-1][py].tipo!=0 &&
-        lvl.tablero[px][py].n==0 &&
-        lvl.tablero[px-1][py].tipo!=4
-        ){
-        px-=1;
-        lvl.tablero[px+1][py].completar();
-        s_normal.play();
-        hit();
+      if (px-1>0){
+        if(
+          lvl.tablero[px-1][py].tipo!=0 &&
+          lvl.tablero[px][py].n==0 &&
+          lvl.tablero[px-1][py].tipo!=4
+          ){
+          px-=1;
+          lvl.tablero[px+1][py].completar();
+          s_normal.play();
+          hit();
+          }else{
+            miss();
+          }
       }else{
         miss();
       }
       break;
       case(DOWN_ARROW):
-      if(
-        lvl.tablero[px+1][py].tipo!=0 &&
-        lvl.tablero[px][py].n==0 &&
-        lvl.tablero[px+1][py].tipo!=4
-        ){
-        px+=1;
-        lvl.tablero[px-1][py].completar();
-        s_normal.play();
-        hit();
-      }else{
+      if (px+1<lvl.c){
+        if(
+          lvl.tablero[px+1][py].tipo &&
+          lvl.tablero[px+1][py].tipo!=0 &&
+          lvl.tablero[px][py].n==0 &&
+          lvl.tablero[px+1][py].tipo!=4
+          ){
+          px+=1;
+          lvl.tablero[px-1][py].completar();
+          s_normal.play();
+          hit();
+        }else{
+          miss();
+        }
+      }
+      else{
         miss();
       }
       break;
@@ -649,15 +679,75 @@ function keyPressed(){
         }
       break;
       //Asignar propiedades a la casilla hovereada
-      case(90):
+      case(90): //Z
         lvl.tablero[px][py].tipo=5;
+        lvl.tablero[px][py].n=1;
         lvl.tablero[px][py].inicializar();
       break;
-
+      case(88): //X
+        lvl.tablero[px][py].tipo=6;
+        lvl.tablero[px][py].n=1;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(49): //1
+        lvl.tablero[px][py].n=1;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(50): //2
+        lvl.tablero[px][py].n=2;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(51): //3
+        lvl.tablero[px][py].n=3;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(52): //4
+        lvl.tablero[px][py].n=4;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(53): //5
+        lvl.tablero[px][py].n=5;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(54): //6
+        lvl.tablero[px][py].n=6;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(55): //7
+        lvl.tablero[px][py].n=7;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(56): //8
+        lvl.tablero[px][py].n=8;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(57): //9
+        lvl.tablero[px][py].n=9;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(48): //0
+        lvl.tablero[px][py].n=0;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(67): //C
+        lvl.tablero[px][py].tipo=1;
+        lvl.tablero[px][py].inicializar();
+        break;
+      case(66): //B
+        lvl.tablero[px][py].tipo=0;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(83): //S
+        lvl.tablero[px][py].tipo=2;
+        lvl.tablero[px][py].inicializar();
+      break;
+      case(70): //F
+        lvl.tablero[px][py].tipo=3;
+        lvl.tablero[px][py].inicializar();
+      break;
       default:
         break;
     }
     break;
-
   }
 }

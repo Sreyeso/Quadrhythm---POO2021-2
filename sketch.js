@@ -10,7 +10,9 @@ let px;           //Coordenada en x del jugador
 let py;           //Coordenada en y del jugador
 let gx;           //Coordenada en x de la meta
 let gy;           //Coordenada en y de la meta
-let lvl;          // Objeto donde se guarda el nivel actual (modo jugar)
+let lvl;          //Objeto donde se guarda el nivel actual (modo jugar)
+let pc;           //Diccionario donde se guarda el color del jugador
+let combo="Bien"; //Control del movimiendo valido
 
 //Variables de sonido
 let s_zeta;
@@ -22,7 +24,8 @@ let s_miss;
 //Elementos DOM
 let canvas;
 let menu;
-let test="bien";
+let score;
+
 //let button;
 
 //Clase principal
@@ -32,13 +35,16 @@ class nivel {
   //dependiendo del nivel, puede haber o no tutorial.
   //añadir metodo para imprimir este nombre encima del nivel, 
   //y el tutorial por debajo
-  constructor(filas,columnas,layout,tamcasilla){
+  constructor(filas,columnas,layout,tamcasilla,timing){
 
     //Definidos por constructor
     this.f=filas;
     this.c=columnas;
     this.layout=layout;//Disposicion del nivel (arreglo)
     this.tamcasilla=tamcasilla;
+    this.timing=timing;   //Valor en ms de la ventana para hacer un movimiento
+                          //antes de que mande miss (limite superior)
+    this.timer=this.timing; //Valor actual del timer
 
     //Definidos por inicializacion
     this.tablero=[];//Representacion del nivel (matriz)
@@ -46,8 +52,14 @@ class nivel {
     this.yini=0; //Posicion inicial del jugador en y
     this.xfin=0; //Posicion en x de la casilla final
     this.yfin=0; //Posicion en y de la casilla final
+    this.contcas=0; //Cantidad de casillas asociadas al ranking final del nivel
 
-    //Definido por calculo automatico 
+    //Definido por calculo dinamico
+
+    this.movfla=false; //Registro de cuando el usuario interacciona por primera vez con el tablero 
+                       //(para que inicie el contador de timing)
+    this.misses=0;    //Misses en 0 al inicio del lvl
+    this.ranking='S'; //Ranking inicial de cada lvl
 
     //Centrado del tablero
     this._ajustex=((width-(this.f*this.tamcasilla))*0.5);
@@ -65,15 +77,21 @@ class nivel {
         let prop = this.layout[(i * (this.f)) + j];
         let propcomp = prop[0] + prop[1] + prop[2];
         
+        //Contar las casillas de juego
+        if (propcomp != "00n") {
+          this.contcas+=1;
+        }
         //Ubicar la casilla inicial
         if (propcomp == "20n") {
           this.xini = i;
           this.yini = j;
+          this.contcas-=1;
         }
         //Ubicar la casilla final
         if (propcomp == "30n") {
           this.xfin = i;
           this.yfin = j;
+          this.contcas-=1;
         }
 
         //crear el objeto casilla con las propiedades que va en esa posicion del tbalero
@@ -98,8 +116,7 @@ class nivel {
         push(); //Graba la configuración actual de estilo de dibujo
         stroke("black");
         fill(cas.color);
-        strokeWeight(1);
-        
+
         //Imprimir la casilla
         rect(x, y, this.tamcasilla, this.tamcasilla);
         if (cas.tipo != 0) {
@@ -175,15 +192,16 @@ class casilla {
 //Funcion utilizada para iniciar/cambiar un nivel.
 //->   Migrar a un archivo txt donde cada fila sea un nivel,
 //     leerlos de ahi y seleccionar
-function inicializarlvl(filas, columnas, layout, tamcasilla) {
-  lvl = new nivel(filas, columnas, layout, tamcasilla);
+function inicializarlvl(filas, columnas, layout, tamcasilla,timing) {
+  lvl = new nivel(filas, columnas, layout, tamcasilla,timing);
   px = lvl.xini;
   py = lvl.yini;
   gx = lvl.xfin;
   gy = lvl.yfin;
+  score.position(lvl._ajustex,lvl._ajustey-(2.5*lvl.tamcasilla));
 }
 
-function preload() {
+function preload() { //Precarga de los sonidos
   soundFormats('wav');
   s_zeta= loadSound('media/z.wav');
   s_equis= loadSound('media/x.wav');
@@ -198,14 +216,19 @@ function setup() {
   frameRate(60);
   //Ajuste del canvas por posicion absoluta
   canvas = createCanvas(windowWidth, windowHeight);
-  canvas.position = (0,0);
   background('mediumpurple');
   showMenu();
   width = windowWidth;
   height = windowHeight;
 
+  //Inicializar el Player Color (Depende de si el movimiento del jugador es valido o no)
+  pc = {'Bien' : 'darkorchid' , 'mal' : 'red'}
+
   //Volumen
   outputVolume(0.2);
+
+   //Elementos DOM
+  score = createElement('h1',"");
 
   inicializarlvl(7, 7,
     [
@@ -217,8 +240,9 @@ function setup() {
       "00n","62n","10n","65n","10n","62n","00n",
       "00n","00n","00n","00n","00n","00n","00n",
     ],
-    45); 
+    45,150); 
   
+   
 }
 
 //Ajuste dinamico de la distribución
@@ -240,8 +264,6 @@ menu = Swal.fire({
   }).then((result) => {
     if (result.isConfirmed) {
       game='1';
-      startGame();
-      
     }
     else{  
       game='2';
@@ -350,10 +372,18 @@ async function startEditor(){
 //fin del equivalente de Auchwitz
 
 
+function miss(){  //Movimiento invalido
+  lvl.movfla=true;
+  s_miss.play();
+  lvl.misses+=1;
+  combo='mal';
+}
 
-
-
-
+function hit(){  //Movimiento permitido
+  lvl.movfla=true;
+  lvl.timer=lvl.timing;
+  combo='Bien';
+}
 
 //0-menu inicial 1-juego 2-editor 3-exit
 function draw() {
@@ -370,10 +400,27 @@ function draw() {
 
     background('mediumpurple');
   
-    text(test,50,50);
-
     //Imprimir el nivel
     lvl.dibujar();
+    //Ranking dinamico
+    score.html(lvl.ranking);
+    //Imprimir la barra de timing
+    push();
+    stroke("black");
+    fill('red');
+    rect(lvl._ajustex, //Coordenada x
+    lvl._ajustey-lvl.tamcasilla, //Coordenada y
+    map(lvl.timer,0,lvl.timing,0,(4*lvl.tamcasilla)), //Ancho
+    (0.2*lvl.tamcasilla)); //Largo
+    pop();
+    //Control de la barra de timing
+    if (lvl.timer>0 && lvl.movfla){
+        lvl.timer-=1;
+    }
+    if (lvl.timer==0){
+      miss();
+      lvl.timer=lvl.timing;
+  }
 
     //Imprimir al jugador
     x = lvl._ajustex + (int(py) * lvl.tamcasilla);
@@ -381,21 +428,36 @@ function draw() {
 
     push();
     strokeWeight(5.5);
-    stroke("darkorchid");
+    stroke(pc[combo]);
     noFill();
     rect(x,y,lvl.tamcasilla,lvl.tamcasilla);
     pop();
 
-    //Control del jugador
-    //CONDICIONES DE MOVIMIENTO
-    //No se puede mover hacia una casilla gris
-    //No se puede mover hacia la izquierda ->
-    //al salir de una casilla, la anterior se marca como completada
-    //No se puede mover hacia una casilla completada
-    //No se puede mover desde una casilla cuyo numero no sea 0
+    //Scoremeter
+    if(lvl.misses>lvl.contcas*0.8){
+      lvl.ranking='F';
+    }
+    else if (lvl.misses>lvl.contcas*0.7){
+      lvl.ranking='E';
+    }
+    else if (lvl.misses>lvl.contcas*0.6){
+      lvl.ranking='D';
+    }
+    else if (lvl.misses>lvl.contcas*0.5){
+      lvl.ranking='C';
+    }
+    else if (lvl.misses>lvl.contcas*0.3){
+      lvl.ranking='B';
+    }
+    else if (lvl.misses>lvl.contcas*0.1){
+      lvl.ranking='A';
+    }else if (lvl.misses==0){
+      lvl.ranking='S';
+    }
+
     //Condicion de victoria 
     if (px == lvl.xfin && py == lvl.yfin) {
-      print("gg");
+      score.html('');
       s_fin.play();
       game = '0';
       //alerta
@@ -412,7 +474,18 @@ function draw() {
 
       }).then((result) => {
         if (result.isConfirmed) {
-          startGame();
+          game='1';
+          inicializarlvl(7, 7,
+            [
+              "00n","00n","00n","00n","00n","00n","00n",
+              "00n","20n","00n","00n","02n","30n","00n",
+              "00n","52n","00n","00n","00n","52n","00n",
+              "00n","10n","00n","00n","00n","10n","00n",
+              "00n","10n","00n","00n","00n","10n","00n",
+              "00n","62n","10n","65n","10n","62n","00n",
+              "00n","00n","00n","00n","00n","00n","00n",
+            ],
+            45,150); 
         }
         else {
           showMenu();
@@ -420,12 +493,11 @@ function draw() {
       }
       );
     }
-
     break;
 
     case('2'): //Editor
       background('mediumpurple');
-      text(test,50,50);
+      text(combo,50,50);
   
       //Imprimir el nivel
       lvl.dibujar();
@@ -451,6 +523,13 @@ function draw() {
 
 function keyPressed(){
   switch(game){//Control del juego
+    //Control del jugador
+    //CONDICIONES DE MOVIMIENTO
+    //No se puede mover hacia una casilla gris
+    //No se puede mover hacia la izquierda ->
+    //al salir de una casilla, la anterior se marca como completada
+    //No se puede mover hacia una casilla completada
+    //No se puede mover desde una casilla cuyo numero no sea 0
     case('1')://Juego
     switch(keyCode){
       case(RIGHT_ARROW):
@@ -461,11 +540,10 @@ function keyPressed(){
         ){
         py+=1;
         lvl.tablero[px][py-1].completar();
-        test='Bien';
         s_normal.play();
+        hit();
       }else{
-        s_miss.play();
-        test='mal';
+        miss();
       }
       break;
       case(LEFT_ARROW):
@@ -476,11 +554,10 @@ function keyPressed(){
         ){
         py-=1;
         lvl.tablero[px][py+1].completar();
-        test='Bien';
         s_normal.play();
+        hit();
       }else{
-        s_miss.play();
-        test='mal';
+        miss();
       }
       break;
       case(UP_ARROW):
@@ -491,11 +568,10 @@ function keyPressed(){
         ){
         px-=1;
         lvl.tablero[px+1][py].completar();
-        test='Bien';
         s_normal.play();
+        hit();
       }else{
-        s_miss.play();
-        test='mal';
+        miss();
       }
       break;
       case(DOWN_ARROW):
@@ -506,11 +582,10 @@ function keyPressed(){
         ){
         px+=1;
         lvl.tablero[px-1][py].completar();
-        test='Bien';
         s_normal.play();
+        hit();
       }else{
-        s_miss.play();
-        test='mal';
+        miss();
       }
       break;
       case(90):
@@ -522,11 +597,10 @@ function keyPressed(){
           if(lvl.tablero[px][py].n==0){
               lvl.tablero[px][py].vaciar();  
           }
-        test='Bien';
         s_zeta.play();
+        hit();
       }else{
-        test='mal';
-        s_miss.play();
+        miss();
       }
       break;
       case(88):
@@ -538,16 +612,14 @@ function keyPressed(){
           if(lvl.tablero[px][py].n==0){
             lvl.tablero[px][py].vaciar();  
         }
-        test='Bien';
         s_equis.play();
+        hit();
       }else{
-        s_miss.play();
-        test='mal';
+        miss();
       }
       break;
       default:
-        s_miss.play();
-        test='mal';
+        miss();
       break;
     }
     break;

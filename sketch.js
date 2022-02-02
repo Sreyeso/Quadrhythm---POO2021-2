@@ -12,6 +12,13 @@ let gx;           //Coordenada en x de la meta
 let gy;           //Coordenada en y de la meta
 let lvl;          // Objeto donde se guarda el nivel actual (modo jugar)
 
+//Variables de sonido
+let s_zeta;
+let s_equis;
+let s_fin;
+let s_normal;
+let s_miss;
+
 //Elementos DOM
 let canvas;
 let menu;
@@ -159,6 +166,10 @@ class casilla {
     this.tipo=4;
     this.inicializar();
   }
+  vaciar(){
+    this.tipo=1;
+    this.inicializar();
+  }
 }
 
 //Funcion utilizada para iniciar/cambiar un nivel.
@@ -172,6 +183,16 @@ function inicializarlvl(filas, columnas, layout, tamcasilla) {
   gy = lvl.yfin;
 }
 
+function preload() {
+  soundFormats('wav');
+  s_zeta= loadSound('media/z.wav');
+  s_equis= loadSound('media/x.wav');
+  s_fin= loadSound('media/fin.wav');
+  s_normal= loadSound('media/normal.wav');
+  s_miss= loadSound('media/combobreak.wav');
+
+}
+
 function setup() {
 
   frameRate(60);
@@ -183,11 +204,18 @@ function setup() {
   width = windowWidth;
   height = windowHeight;
 
-  inicializarlvl(7, 3,
+  //Volumen
+  outputVolume(0.2);
+
+  inicializarlvl(7, 7,
     [
       "00n","00n","00n","00n","00n","00n","00n",
-      "00n","20n","52n","10n","62n","30n","00n",
-      "00n","00n","00n","00n","00n","00n","00n"
+      "00n","20n","00n","00n","02n","30n","00n",
+      "00n","52n","00n","00n","00n","52n","00n",
+      "00n","10n","00n","00n","00n","10n","00n",
+      "00n","10n","00n","00n","00n","10n","00n",
+      "00n","62n","10n","65n","10n","62n","00n",
+      "00n","00n","00n","00n","00n","00n","00n",
     ],
     45); 
   
@@ -368,6 +396,7 @@ function draw() {
     //Condicion de victoria 
     if (px == lvl.xfin && py == lvl.yfin) {
       print("gg");
+      s_fin.play();
       game = '0';
       //alerta
       Swal.fire({
@@ -422,23 +451,107 @@ function draw() {
 
 function keyPressed(){
   switch(game){//Control del juego
-    case('1'):
+    case('1')://Juego
     switch(keyCode){
       case(RIGHT_ARROW):
       if(
         lvl.tablero[px][py+1].tipo!=0 &&
-        lvl.tablero[px][py].n==0
+        lvl.tablero[px][py].n==0 &&
+        lvl.tablero[px][py+1].tipo!=4
         ){
         py+=1;
         lvl.tablero[px][py-1].completar();
         test='Bien';
+        s_normal.play();
       }else{
+        s_miss.play();
         test='mal';
       }
       break;
+      case(LEFT_ARROW):
+      if(
+        lvl.tablero[px][py-1].tipo!=0 &&
+        lvl.tablero[px][py].n==0 &&
+        lvl.tablero[px][py-1].tipo!=4
+        ){
+        py-=1;
+        lvl.tablero[px][py+1].completar();
+        test='Bien';
+        s_normal.play();
+      }else{
+        s_miss.play();
+        test='mal';
+      }
+      break;
+      case(UP_ARROW):
+      if(
+        lvl.tablero[px-1][py].tipo!=0 &&
+        lvl.tablero[px][py].n==0 &&
+        lvl.tablero[px-1][py].tipo!=4
+        ){
+        px-=1;
+        lvl.tablero[px+1][py].completar();
+        test='Bien';
+        s_normal.play();
+      }else{
+        s_miss.play();
+        test='mal';
+      }
+      break;
+      case(DOWN_ARROW):
+      if(
+        lvl.tablero[px+1][py].tipo!=0 &&
+        lvl.tablero[px][py].n==0 &&
+        lvl.tablero[px+1][py].tipo!=4
+        ){
+        px+=1;
+        lvl.tablero[px-1][py].completar();
+        test='Bien';
+        s_normal.play();
+      }else{
+        s_miss.play();
+        test='mal';
+      }
+      break;
+      case(90):
+      if(
+        lvl.tablero[px][py].tipo==5 &&
+        lvl.tablero[px][py].n>0
+        ){
+          lvl.tablero[px][py].n-=1;
+          if(lvl.tablero[px][py].n==0){
+              lvl.tablero[px][py].vaciar();  
+          }
+        test='Bien';
+        s_zeta.play();
+      }else{
+        test='mal';
+        s_miss.play();
+      }
+      break;
+      case(88):
+      if(
+        lvl.tablero[px][py].tipo==6 &&
+        lvl.tablero[px][py].n>0
+        ){
+          lvl.tablero[px][py].n-=1;
+          if(lvl.tablero[px][py].n==0){
+            lvl.tablero[px][py].vaciar();  
+        }
+        test='Bien';
+        s_equis.play();
+      }else{
+        s_miss.play();
+        test='mal';
+      }
+      break;
+      default:
+        s_miss.play();
+        test='mal';
+      break;
     }
     break;
-    case('2'):
+    case('2')://Editor
     switch(keyCode){
       //Movimiento de seleccionar casilla
       case(RIGHT_ARROW):
@@ -475,7 +588,4 @@ function keyPressed(){
     break;
 
   }
-    
-  
-  
 }

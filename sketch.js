@@ -11,7 +11,8 @@ let py;           //Coordenada en y del jugador
 let gx;           //Coordenada en x de la meta
 let gy;           //Coordenada en y de la meta
 let lvl;          // Objeto donde se guarda el nivel actual (modo jugar)
-
+let clvl;         // Objeto donde se guarda el JSON para carga de nivel
+let nlvl=0;         //Contador de nivel para carga sequencial de niveles
 //Variables de sonido
 let s_zeta;
 let s_equis;
@@ -23,6 +24,8 @@ let s_miss;
 let canvas;
 let menu;
 let test="bien";
+//Request object
+let request = new XMLHttpRequest();
 //let button;
 
 //Clase principal
@@ -206,18 +209,8 @@ function setup() {
 
   //Volumen
   outputVolume(0.2);
-
-  inicializarlvl(7, 7,
-    [
-      "00n","00n","00n","00n","00n","00n","00n",
-      "00n","20n","00n","00n","02n","30n","00n",
-      "00n","52n","00n","00n","00n","52n","00n",
-      "00n","10n","00n","00n","00n","10n","00n",
-      "00n","10n","00n","00n","00n","10n","00n",
-      "00n","62n","10n","65n","10n","62n","00n",
-      "00n","00n","00n","00n","00n","00n","00n",
-    ],
-    45); 
+  //Cargo nivel inicial
+  loadLevel(nlvl);
   
 }
 
@@ -240,7 +233,7 @@ menu = Swal.fire({
   }).then((result) => {
     if (result.isConfirmed) {
       game='1';
-      startGame();
+      //startGame();
       
     }
     else{  
@@ -250,6 +243,16 @@ menu = Swal.fire({
   });
 }
 
+//Carga de nivel
+//decirle a tibu que toca agregar condicional para los bordes
+function loadLevel(n){
+  request.open("GET", "/levels/made/level"+n+".json", false);
+  request.send(null);
+  clvl = JSON.parse(request.responseText);
+  inicializarlvl(clvl.x, clvl.y, clvl.layout,
+    45);
+
+}
 //(Posible funcion para el editor, talvez sea mejor encapsularla en clase)
 //perdoname por las atrocidades que voy a cometer en este codigo
 //altamente WIP
@@ -298,10 +301,6 @@ async function startEditor(){
     }
   
   });
-  if (elx) {
-    Swal.fire('Elegiste: '+elx);
-    JSON.stringify(elx);
-  }
   const { value: ely } = await Swal.fire({
     title: 'Escoje valor y',
     input: 'select',
@@ -330,21 +329,22 @@ async function startEditor(){
     }
 
   });
-  if (ely) {
-    Swal.fire('Elegiste: ' + ely);
-    JSON.stringify(ely);
+  if (elx && ely) {
+    Swal.fire('Elegiste: ' +elx+" X "+ ely);
   }
   //Falta generacion de matriz segun parametros, recorrido y cambio de propiedades, almacenamiento JSON, modo para edicion ((!game)?)
   
-  /* elvl = new nivel(ely, elx,
-    [ "00n", "00n", "00n", "00n", "00n", "00n", "00n",
-    "00n", "20n", "52n", "10n", "62n", "30n", "00n"]
-    ,2,45); */
   inicializarlvl(parseInt(elx), parseInt(ely),
     genArray(elx*ely),
     45);
-    
-  
+  //Hacer la interfaz para exportar  
+  clvl=JSON.stringify({x:parseInt(elx),y:parseInt(ely),layout:nivel.tablero})
+  localStorage.setItem("test_ug",clvl);
+  /* request.open("POST", "/levels/made/" + 'test' +"_ug"+ ".json", true);
+  request.setRequestHeader("Content-type","application/json");
+  request.setRequestHeader("Content-length", clvl.length);
+  request.setRequestHeader("Connection", "Keep-Alive");
+  request.send(clvl); */
 }
 
 //fin del equivalente de Auchwitz
@@ -398,6 +398,7 @@ function draw() {
       print("gg");
       s_fin.play();
       game = '0';
+      nlvl++;
       //alerta
       Swal.fire({
         title: '<b> Nivel Completado ! </b>',
@@ -412,7 +413,8 @@ function draw() {
 
       }).then((result) => {
         if (result.isConfirmed) {
-          startGame();
+          game = '1';
+          loadLevel(nlvl);
         }
         else {
           showMenu();

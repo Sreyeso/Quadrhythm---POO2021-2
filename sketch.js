@@ -311,7 +311,7 @@ async function loadLevel(n,mode){
             }
           }) */;
       if(odioname){      
-      //try{
+      try{
       clvl = localStorage.getItem(odioname);
       datos = JSON.parse(clvl);
       let clayout=[];
@@ -326,7 +326,7 @@ async function loadLevel(n,mode){
         }
       }
       inicializarlvl(datos.x, datos.y, clayout, 45,150);
-    /*}
+    }
       catch{
         Swal.fire({
           title:'Nivel no existe',
@@ -335,7 +335,7 @@ async function loadLevel(n,mode){
         }).then(
           showMenu
         );
-      }*/
+      }
       }      
       break;
     default:

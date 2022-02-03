@@ -12,7 +12,7 @@ let gx;           //Coordenada en x de la meta
 let gy;           //Coordenada en y de la meta
 let lvl;          // Objeto donde se guarda el nivel actual (modo jugar)
 let clvl;         // Objeto donde se guarda el JSON para carga de nivel
-let nlvl=0;         //Contador de nivel para carga sequencial de niveles
+let nlvl=0;       //Contador de nivel para carga sequencial de niveles
 //Variables de sonido
 let s_zeta;
 let s_equis;
@@ -24,6 +24,7 @@ let s_miss;
 let canvas;
 let menu;
 let test="bien";
+let exportlvl;
 //Request object
 let request = new XMLHttpRequest();
 //let button;
@@ -203,14 +204,19 @@ function setup() {
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position = (0,0);
   background('mediumpurple');
-  showMenu();
   width = windowWidth;
   height = windowHeight;
-
+  exportlvl=createButton('Exportar');
+  exportlvl.position(windowWidth * 0.483,windowHeight*0.85);
+  exportlvl.hide();
+  exportlvl.mouseClicked(saveLevel);
+  showMenu();
+  //slider para tamaño de nivel
+  //alerta para asignacion del nombre
   //Volumen
   outputVolume(0.2);
   //Cargo nivel inicial
-  loadLevel(nlvl);
+  inicializarlvl(1,1["00n"],45);
   
 }
 
@@ -219,52 +225,159 @@ function windowResized() {
   width = windowWidth;
   height = windowHeight;
 }
-//Funcion (ojala temporal?) de menu
-function showMenu(){
-menu = Swal.fire({
+//Carga de nivel
+//decirle a tibu que toca agregar condicional para los bordes
+async function loadLevel(n,mode){
+  switch(mode){
+    case(0): //Carga JSON
+      request.open("GET", "/levels/made/levels.json", false);
+      request.send(null);
+      clvl = JSON.parse(request.responseText);
+      clvl= (clvl.level[n]);
+      inicializarlvl(clvl.x, clvl.y, clvl.layout,45);
+      break;
+    case(1): //Carga localstorage
+      let { value: odioname } = await Swal.fire({
+        title: 'Nombre del nivel?',
+        input: 'text',
+
+        showDenyButton: true,
+        reverseButtons: true,
+        allowOutsideClick: false,
+        inputValidator: (value) => {
+          return new Promise((resolve) => {
+            if (value) {
+              resolve();
+            }
+            else {
+              resolve('ERROR');
+              alert('juego no existe');
+              showMenu();
+            }
+          })
+        }
+      })/* .then((result) => {
+            if(result.isConfirmed){
+              resolve();
+            }
+            if (result.isDenied) {
+              resolve();
+              showMenu();
+            }
+          }) */;
+      if(odioname){      
+      console.log(odioname);
+      try{
+      clvl = localStorage.getItem(odioname);
+      console.log(clvl);
+      inicializarlvl(clvl.x, clvl.y, clvl.layout, 45);
+    }
+      catch{
+        Swal.fire({
+          title:'Nivel no existe',
+          toast: true,
+          timer:3000
+        }).then(
+          showMenu
+        );
+      }
+      }      
+      break;
+    default:
+      alert('nani?!');
+      break;  
+  }
+}
+async function saveLevel() {
+  /* request.open("POST", "/levels/made/" + 'test' +"_ug"+ ".json", true);
+  request.setRequestHeader("Content-type","application/json");
+  request.setRequestHeader("Content-length", clvl.length);
+  request.setRequestHeader("Connection", "Keep-Alive");
+  request.send(clvl); */
+  let { value: ename } = await Swal.fire({
+    title: 'Nombre del nivel?',
+    input: 'text',
+    showDenyButton: true,
+    reverseButtons: true,
+    allowOutsideClick: false,
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Escribe un nombre!'
+      }
+    }
+  })
+
+  if (ename) {
+    clvl = JSON.stringify({ x: lvl.f, y: parseInt(lvl.c), layout: lvl.tablero });
+    Swal.fire({
+      title: 'Estas seguro?',
+      color:'white',
+      text: "Tu nivel llamado "+ename+" de "+lvl.f+"X"+lvl.c+" se guardará!",
+      icon: 'warning',
+      showDenyButton: true,
+      reverseButtons: true,
+      allowOutsideClick: false,
+      confirmButtonColor: 'chartreuse',
+      cancelButtonColor: 'tomato',
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Regresar'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.setItem(ename, clvl);
+        Swal.fire(
+          'Tu nivel ha sido guardado!',
+        )
+        showMenu();
+      }
+    })
+  } 
+}
+//Funcion de menu encapsular la carga de esa vaina yuck y quitar async
+function showMenu() {
+  game = '0';
+  menu = Swal.fire({
     title: 'Not ADOFAI WIP',
     showDenyButton: true,
+    showCancelButton: true,
     reverseButtons: true,
     allowOutsideClick: false,
     confirmButtonText: 'Jugar',
     denyButtonText: 'Editor',
+    cancelButtonText: 'Cargar',
     confirmButtonColor: 'chartreuse',
-    cancelButtonColor: 'tomato',    
+    cancelButtonColor: 'magenta',
   }).then((result) => {
     if (result.isConfirmed) {
-      game='1';
-      //startGame();
       
+      loadLevel(nlvl,0);
+      game = '1';
+
     }
-    else{  
-      game='2';
+    if (result.isDismissed) {
+      inicializarlvl(1, 2,["30n","20n"], 45);
+      loadLevel(nlvl,1);
+      game = '1';
+
+  
+    }
+    if(result.isDenied) {
+      game = '2';
       startEditor();
     }
   });
 }
-
-//Carga de nivel
-//decirle a tibu que toca agregar condicional para los bordes
-function loadLevel(n){
-  request.open("GET", "/levels/made/level"+n+".json", false);
-  request.send(null);
-  clvl = JSON.parse(request.responseText);
-  inicializarlvl(clvl.x, clvl.y, clvl.layout,
-    45);
-
-}
 //(Posible funcion para el editor, talvez sea mejor encapsularla en clase)
 //perdoname por las atrocidades que voy a cometer en este codigo
 //altamente WIP
-let elvl;
+//let elvl;
 //let elx;
 //let ely;
-let epx;
-let epy;
-let egx;
-let egy;
-let elayout;
-let lvlinput;
+//let epx;
+//let epy;
+//let egx;
+//let egy;
+//let elayout;
+//let lvlinput;
 function genArray(x) {
   let array = [];
   for (let i = 0; i < x; i++) {
@@ -273,7 +386,7 @@ function genArray(x) {
   return array;
 }
 async function startEditor(){
-  const {value:elx}=await Swal.fire({
+  let {value:elx}=await Swal.fire({
     title: 'Escoje valor x',
     input: 'select',
     inputOptions: {
@@ -289,7 +402,10 @@ async function startEditor(){
     
   },
     inputPlaceholder: 'Selecciona un tamaño',
-    showCancelButton: true,
+    showDenyButton: false,
+    reverseButtons: true,
+    allowOutsideClick: false,
+    //confirmButtonColor: 'chartreuse',
     inputValidator: (value) => {
       return new Promise((resolve) => {
         if (value) {
@@ -301,7 +417,7 @@ async function startEditor(){
     }
   
   });
-  const { value: ely } = await Swal.fire({
+  let { value: ely } = await Swal.fire({
     title: 'Escoje valor y',
     input: 'select',
     inputOptions: {
@@ -317,7 +433,10 @@ async function startEditor(){
 
     },
     inputPlaceholder: 'Selecciona un tamaño',
-    showCancelButton: true,
+    showDenyButton: false,
+    reverseButtons: true,
+    allowOutsideClick: false,
+    //confirmButtonColor: 'chartreuse',
     inputValidator: (value) => {
       return new Promise((resolve) => {
         if (value) {
@@ -332,19 +451,11 @@ async function startEditor(){
   if (elx && ely) {
     Swal.fire('Elegiste: ' +elx+" X "+ ely);
   }
-  //Falta generacion de matriz segun parametros, recorrido y cambio de propiedades, almacenamiento JSON, modo para edicion ((!game)?)
+  // exportar a menu y cargar
   
-  inicializarlvl(parseInt(elx), parseInt(ely),
-    genArray(elx*ely),
-    45);
-  //Hacer la interfaz para exportar  
-  clvl=JSON.stringify({x:parseInt(elx),y:parseInt(ely),layout:nivel.tablero})
-  localStorage.setItem("test_ug",clvl);
-  /* request.open("POST", "/levels/made/" + 'test' +"_ug"+ ".json", true);
-  request.setRequestHeader("Content-type","application/json");
-  request.setRequestHeader("Content-length", clvl.length);
-  request.setRequestHeader("Connection", "Keep-Alive");
-  request.send(clvl); */
+  inicializarlvl(parseInt(elx),parseInt(ely),genArray(elx*ely),45);
+  
+  
 }
 
 //fin del equivalente de Auchwitz
@@ -365,9 +476,10 @@ function draw() {
     case('0'): //Volver al menu
       clear();
       background('mediumpurple');
+      exportlvl.hide();
     break;
     case('1'): //Juego
-
+    
     background('mediumpurple');
   
     text(test,50,50);
@@ -414,9 +526,11 @@ function draw() {
       }).then((result) => {
         if (result.isConfirmed) {
           game = '1';
-          loadLevel(nlvl);
+          loadLevel(nlvl,0);
+          //añadir 
         }
         else {
+          nlvl = 0;
           showMenu();
         }
       }
@@ -431,7 +545,8 @@ function draw() {
   
       //Imprimir el nivel
       lvl.dibujar();
-  
+      //Imprimir el boton
+      exportlvl.show();
       //Imprimir al jugador
       x = lvl._ajustex + (int(py) * lvl.tamcasilla);
       y = lvl._ajustey + (int(px) * lvl.tamcasilla);
@@ -442,7 +557,6 @@ function draw() {
       noFill();
       rect(x,y,lvl.tamcasilla,lvl.tamcasilla);
       pop();
-
     break;
     default:
       alert('chao');

@@ -1,0 +1,32 @@
+{
+    "level":[{
+    "name":"Tutorial1",    
+    "x": 2,
+    "y": 2,
+    "layout":[
+        "20n",
+        "30n",
+        "00n",
+        "00n"
+    ],
+    "tamcasilla":70,
+    "timing":150
+    },
+    {
+        "name": "Tutorial2",
+        "x": 3,
+        "y": 2,
+        "layout": [
+            "20n",
+            "30n",
+            "00n",
+            "00n",
+            "00n",
+            "00n"
+        ],
+        "tamcasilla":70,
+        "timing": 150   
+    }
+]
+
+}

@@ -273,7 +273,7 @@ function preload() { //Precarga de los archivos multimedia
   s_miss= loadSound('media/combobreak.wav');
   tutogame=loadImage('media/tutorialgame.png');
   tutoedit=loadImage('media/tutorialeditor.png');
-  clvl =loadJSON('/levels/made/levels.json');
+  clvl =loadJSON('levels/levels.json');
 }
 
 function setup() {

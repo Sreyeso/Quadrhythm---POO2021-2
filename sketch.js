@@ -4,6 +4,10 @@ let height;       //Largo de la ventana
 let x;
 let y;
 
+let tutogame;
+let tutoedit;
+let escfla=false;
+
 //Variables del juego
 let game='0';     //0-menu inicial 1-juego 2-editor 3-exit
 let px;           //Coordenada en x del jugador 
@@ -29,7 +33,7 @@ let menu;
 let score;
 let exportlvl;
 let sldrtiming;
-let sldrtext;
+let timingtxt;
 
 //Request object
 let request = new XMLHttpRequest();
@@ -111,6 +115,18 @@ class nivel {
   }
 
   dibujar() {
+
+    this.tamcasilla=map(max(this.f,this.c),1,15,80,40);
+    this._ajustex=((width-(this.f*this.tamcasilla))*0.5);
+    this._ajustey=((height-(this.c*this.tamcasilla))*0.5);
+
+    score.position(lvl._ajustex,lvl._ajustey-(2*lvl.tamcasilla));
+    exportlvl.position(lvl._ajustex+(int(lvl.f*0.485)*lvl.tamcasilla),lvl._ajustey+((lvl.c+0.2)*lvl.tamcasilla));
+    sldrtiming.position(lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(2*lvl.tamcasilla));
+    timingtxt.position(lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(lvl.tamcasilla));
+    timingtxt.style('font-size',+str(lvl.tamcasilla*0.45)+'px');
+    score.style('font-size',+str(lvl.tamcasilla*0.45)+'px');
+
     //Recorrer el tablero
     for (let i = 0; i < this.c; i++) {
       for (let j = 0; j < this.f; j++) {
@@ -240,28 +256,23 @@ class casilla {
   }
 }
 
-//Funcion utilizada para iniciar/cambiar un nivel.
-//->   Migrar a un archivo txt donde cada fila sea un nivel,
-//     leerlos de ahi y seleccionar
 function inicializarlvl(filas, columnas, layout, tamcasilla,timing) {
   lvl = new nivel(filas, columnas, layout, tamcasilla,timing);
   px = lvl.xini;
   py = lvl.yini;
   gx = lvl.xfin;
   gy = lvl.yfin;
-  score.position(lvl._ajustex,lvl._ajustey-(2.5*lvl.tamcasilla));
-  exportlvl.position(lvl._ajustex+(int(lvl.f*0.486)*lvl.tamcasilla),lvl._ajustey+((lvl.c+0.2)*lvl.tamcasilla));
-  sldrtiming.position(lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(2*lvl.tamcasilla))
 }
 
-function preload() { //Precarga de los sonidos
+function preload() { //Precarga de los archivos multimedia
   soundFormats('wav');
   s_zeta= loadSound('media/z.wav');
   s_equis= loadSound('media/x.wav');
   s_fin= loadSound('media/fin.wav');
   s_normal= loadSound('media/normal.wav');
   s_miss= loadSound('media/combobreak.wav');
-
+  tutogame=loadImage('media/tutorialgame.png');
+  tutoedit=loadImage('media/tutorialeditor.png');
 }
 
 function setup() {
@@ -283,17 +294,21 @@ function setup() {
 
    //Elementos DOM
   score = createElement('h1',"");
+  score.hide();
     //boton exportar
   exportlvl=createButton('Exportar');
   exportlvl.position(0,0);
   exportlvl.hide();
   exportlvl.mouseClicked(saveLevel);
     //slider timing
-  sldrtiming = createSlider(100, 300, 50,100);
+  sldrtiming = createSlider(50,300,150,50);
   sldrtiming.position(0,0);
   sldrtiming.style('width', '100px');
   sldrtiming.hide();
-  sldrtext='';
+  //texto slider timing
+  timingtxt = createElement('p'," ");
+  timingtxt.position(0,0);
+  timingtxt.hide();
   showMenu();
   //Volumen
   outputVolume(0.2);
@@ -321,6 +336,8 @@ async function loadLevel(n,mode){
       catch{
         nlvl=0;
         showMenu();
+        //Ranking dinamico
+        score.show();
       }
       break;
     case(1): //Carga localstorage
@@ -363,6 +380,8 @@ async function loadLevel(n,mode){
         }
       }
       inicializarlvl(clvl.x, clvl.y, clayout, 45,clvl.timing);
+      //Ranking dinamico
+      score.show();
     }
       catch{
         Swal.fire({
@@ -445,6 +464,8 @@ async function saveLevel() {
             inicializarlvl(clvl.x, clvl.y, clayout, 45, clvl.timing);
             game='1';
             alert(('"x":' + clvl.x + ',' + '"y": ' + clvl.y +','+ '"layout": ' + join([clayout,'",']) +','+ '"tamcasilla": ' + 45 +','+'"timing": '+ clvl.timing));
+            //Ranking dinamico
+            score.show();
           }
           if (result.isDismissed){
             showMenu();
@@ -476,10 +497,12 @@ function showMenu() {
     if (result.isConfirmed) {
       loadLevel(nlvl,0);
       game = '1';
-
+      //Ranking dinamico
+      score.show();
     }
     if (result.isDismissed) {
       inicializarlvl(1, 2,["30n","20n"], 45,150);
+      lvl.timing=0;
       nlvl=-1;
       loadLevel(nlvl,1);
       game = '1';
@@ -487,8 +510,9 @@ function showMenu() {
   
     }
     if(result.isDenied) {
-      game = '2';
       startEditor();
+      escfla=true;
+      game = '2';
     }
   });
 }
@@ -570,6 +594,10 @@ async function startEditor(){   // Empieza el editor de niveles
     Swal.fire('Elegiste: ' +elx+" X "+ ely);
   }
   inicializarlvl(parseInt(elx),parseInt(ely),genArray(elx*ely),45,150);
+  //Imprimir el boton
+  exportlvl.show();
+  sldrtiming.show();
+  timingtxt.show();
 }
 
 
@@ -598,22 +626,24 @@ function draw() {
       background('mediumpurple');
       exportlvl.hide();
       sldrtiming.hide();
-      sldrtext='';
+      timingtxt.hide();
+      score.hide();
     break;
     case('1'): //Juego
-    
     background('mediumpurple');
-  
+    push();
+    textSize(lvl.tamcasilla*0.3);
+    text('Presiona ESC para ver el tutorial (El juego no se pausara!)',10,height-30);
+    pop();
     //Imprimir el nivel
     lvl.dibujar();
-    //Ranking dinamico
     score.html(lvl.ranking+'<br>Misses: '+lvl.misses);
     //Imprimir la barra de timing
     push();
     stroke("black");
     fill('red');
     rect(lvl._ajustex, //Coordenada x
-    lvl._ajustey-lvl.tamcasilla, //Coordenada y
+    lvl._ajustey-(lvl.tamcasilla*0.5), //Coordenada y
     map(lvl.timer,0,lvl.timing,0,((0.5*lvl.f)*lvl.tamcasilla)), //Ancho
     (0.2*lvl.tamcasilla)); //Largo
     pop();
@@ -659,11 +689,18 @@ function draw() {
       lvl.ranking='S';
     }
 
+    if(escfla){
+      image(tutogame,0,0,map(1920,0,1920,0,width),map(1080,0,1080,0,height));
+      score.hide();
+      text('Presiona ESC para ocultar',10,height-30);
+    }else{
+      score.show();
+    }
+
     //Condicion de victoria 
     if (px == lvl.xfin && py == lvl.yfin) {
       if(lvl.compl!=lvl.contcas+1){
         game='0';
-        score.html('');
         Swal.fire({
           title: 'No completaste todas las casillas, has perdido!',
           toast: true,
@@ -673,7 +710,6 @@ function draw() {
           showMenu
         );
       }else{
-      score.html('');
       s_fin.play();
       game = '0';
       nlvl++;
@@ -694,7 +730,9 @@ function draw() {
       }).then((result) => {
         if (result.isConfirmed) {
           game = '1';
-          loadLevel(nlvl,0);           
+          loadLevel(nlvl,0); 
+          //Ranking dinamico
+          score.show();        
         }
         else {
           nlvl = 0;
@@ -708,14 +746,15 @@ function draw() {
 
     case('2'): //Editor
       background('mediumpurple');
-      sldrtext =text('Timing: '+str(sldrtiming.value()), lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(1.8*lvl.tamcasilla));
-  
+      text('Presiona ESC para ver informacion',10,height-30);
+      sldrtiming.style('width', 2.3*lvl.tamcasilla+'px');
+      timingtxt.html('Timing: '+str(sldrtiming.value()));
+      push();
+      textSize(lvl.tamcasilla*0.5);
+      pop();
       //Imprimir el nivel
       lvl.dibujar();
-      //Imprimir el boton
-      exportlvl.show();
-      sldrtiming.show();
-      //Imprimir al jugador
+     //Imprimir al jugador
       x = lvl._ajustex + (int(py) * lvl.tamcasilla);
       y = lvl._ajustey + (int(px) * lvl.tamcasilla);
   
@@ -725,6 +764,20 @@ function draw() {
       noFill();
       rect(x,y,lvl.tamcasilla,lvl.tamcasilla);
       pop();
+
+      if(escfla){
+        image(tutoedit,0,0,map(1920,0,1920,0,width),map(1080,0,1080,0,height));
+        exportlvl.hide();
+        sldrtiming.hide();
+        timingtxt.hide();
+        score.hide();
+        text('Presiona ESC para ocultar',10,height-30);
+      }else{
+        exportlvl.show();
+        sldrtiming.show();
+        timingtxt.show();
+        score.show();
+      }
     break;
     default:
       alert('chao');
@@ -738,10 +791,8 @@ function keyPressed(){
                 //Control del jugador
                 //CONDICIONES DE MOVIMIENTO
                 //No se puede mover hacia una casilla gris
-                //No se puede mover hacia la izquierda ->
                 //al salir de una casilla, la anterior se marca como completada
                 //No se puede mover hacia una casilla completada
-                //No se puede mover desde una casilla cuyo numero no sea 0
     case('1'):  //Juego
     switch(keyCode){
       case(RIGHT_ARROW):
@@ -848,6 +899,14 @@ function keyPressed(){
         miss();
       }
       break;
+      case(27): //ESC
+      if(!escfla){
+        escfla=true;
+      }
+      else{
+        escfla=false;
+      }
+      break;
       default:
         miss();
       break;
@@ -948,6 +1007,14 @@ function keyPressed(){
       if (!lvl.hasfinish()){
         lvl.tablero[px][py].tipo=3;
         lvl.tablero[px][py].inicializar();
+      }
+      break;
+      case(27): //ESC
+      if(!escfla){
+        escfla=true;
+      }
+      else{
+        escfla=false;
       }
       break;
       default:

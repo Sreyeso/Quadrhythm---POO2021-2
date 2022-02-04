@@ -470,7 +470,7 @@ async function saveLevel() {
             game='0';
             inicializarlvl(clvl.x, clvl.y, clayout, 45, clvl.timing);
             game='1';
-            alert(('"x":' + clvl.x + ',' + '"y": ' + clvl.y +','+ '"layout": ' + join([cloutput]) +','+ '"tamcasilla": ' + 45 +','+'"timing": '+ clvl.timing));
+            alert(('"x":' + clvl.x + ',' + '"y": ' + clvl.y +','+ '"layout": ' + join(["[",cloutput,"]"]) +','+ '"tamcasilla": ' + 45 +','+'"timing": '+ clvl.timing));
             //Ranking dinamico
             score.show();
           }

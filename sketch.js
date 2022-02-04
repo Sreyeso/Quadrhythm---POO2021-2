@@ -47,10 +47,10 @@ class nivel {
     this.f=filas;
     this.c=columnas;
     this.layout=layout;//Disposicion del nivel (arreglo)
-    this.tamcasilla=tamcasilla;
     this.timing=timing;   //Valor en ms de la ventana para hacer un movimiento
                           //antes de que mande miss (limite superior)
     this.timer=this.timing; //Valor actual del timer
+    this.tamcasilla=tamcasilla;
 
     //Definidos por inicializacion
     this.tablero=[]; //Representacion del nivel (matriz)
@@ -61,7 +61,7 @@ class nivel {
     this.contcas=0; //Cantidad de casillas asociadas al ranking final del nivel
 
     //Definido por calculo dinamico
-
+    this.compl=0;
     this.movfla=false; //Registro de cuando el usuario interacciona por primera vez con el tablero 
                        //(para que inicie el contador de timing)
     this.misses=0;    //Misses en 0 al inicio del lvl
@@ -70,6 +70,8 @@ class nivel {
     //Centrado del tablero
     this._ajustex=((width-(this.f*this.tamcasilla))*0.5);
     this._ajustey=((height-(this.c*this.tamcasilla))*0.5);
+
+    
     
     this.inicializar();  
   }
@@ -141,6 +143,30 @@ class nivel {
       }
     }
   }
+
+  hasstart(){
+    for (let i = 0; i < this.c; i++) {
+      for (let j = 0; j < this.f; j++) {
+        let cas = this.tablero[i][j];  
+        if (cas.tipo==2) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  hasfinish(){
+    for (let i = 0; i < this.c; i++) {
+      for (let j = 0; j < this.f; j++) {
+        let cas = this.tablero[i][j];  
+        if (cas.tipo==3) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
 }
 
 //Clase secundaria
@@ -206,6 +232,7 @@ class casilla {
   completar(){
     this.tipo=4;
     this.inicializar();
+    lvl.compl+=1;
   }
   vaciar(){
     this.tipo=1;
@@ -223,6 +250,8 @@ function inicializarlvl(filas, columnas, layout, tamcasilla,timing) {
   gx = lvl.xfin;
   gy = lvl.yfin;
   score.position(lvl._ajustex,lvl._ajustey-(2.5*lvl.tamcasilla));
+  exportlvl.position(lvl._ajustex+(int(lvl.f*0.486)*lvl.tamcasilla),lvl._ajustey+((lvl.c+0.2)*lvl.tamcasilla));
+  sldrtiming.position(lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(2*lvl.tamcasilla))
 }
 
 function preload() { //Precarga de los sonidos
@@ -244,6 +273,8 @@ function setup() {
   width = windowWidth;
   height = windowHeight;
 
+  //Cargo nivel inicial
+ 
   //Inicializar el Player Color (Depende de si el movimiento del jugador es valido o no)
   pc = {'Bien' : 'darkorchid' , 'mal' : 'red'}
 
@@ -254,20 +285,20 @@ function setup() {
   score = createElement('h1',"");
     //boton exportar
   exportlvl=createButton('Exportar');
-  exportlvl.position(windowWidth * 0.483,windowHeight*0.85);
+  exportlvl.position(0,0);
   exportlvl.hide();
   exportlvl.mouseClicked(saveLevel);
     //slider timing
   sldrtiming = createSlider(100, 300, 50,100);
-  sldrtiming.position(windowWidth * 0.25, windowHeight * 0.483);
+  sldrtiming.position(0,0);
   sldrtiming.style('width', '100px');
   sldrtiming.hide();
   sldrtext='';
   showMenu();
   //Volumen
   outputVolume(0.2);
-  //Cargo nivel inicial
   inicializarlvl(1,1,["20n"],45,150);
+
   
 }
 
@@ -288,6 +319,7 @@ async function loadLevel(n,mode){
       inicializarlvl(clvl.x, clvl.y, clvl.layout,clvl.tamcasilla,clvl.timing);
       }
       catch{
+        nlvl=0;
         showMenu();
       }
       break;
@@ -575,7 +607,7 @@ function draw() {
     //Imprimir el nivel
     lvl.dibujar();
     //Ranking dinamico
-    score.html(lvl.ranking);
+    score.html(lvl.ranking+'<br>Misses: '+lvl.misses);
     //Imprimir la barra de timing
     push();
     stroke("black");
@@ -621,14 +653,26 @@ function draw() {
     else if (lvl.misses>lvl.contcas*0.3){
       lvl.ranking='B';
     }
-    else if (lvl.misses>lvl.contcas*0.1){
+    else if (lvl.misses>0){
       lvl.ranking='A';
-    }else if (lvl.misses==0){
+    }else{
       lvl.ranking='S';
     }
 
     //Condicion de victoria 
     if (px == lvl.xfin && py == lvl.yfin) {
+      if(lvl.compl!=lvl.contcas+1){
+        game='0';
+        score.html('');
+        Swal.fire({
+          title: 'No completaste todas las casillas, has perdido!',
+          toast: true,
+          timer: 3000,
+          confirmButtonColor: 'chartreuse'
+        }).then(
+          showMenu
+        );
+      }else{
       score.html('');
       s_fin.play();
       game = '0';
@@ -636,7 +680,7 @@ function draw() {
       //alerta
       Swal.fire({
         title: '<b> Nivel Completado ! </b>',
-        text:('Rango obtenido: '+ lvl.ranking),
+        text:('Rango obtenido: '+ lvl.ranking +'- Numero de fallos: '+lvl.misses),
         color:'white',
         showDenyButton: true,
         focusConfirm: true,
@@ -659,11 +703,12 @@ function draw() {
       }
       );
     }
+    }
     break;
 
     case('2'): //Editor
       background('mediumpurple');
-      sldrtext =text('Timing: '+str(sldrtiming.value()), windowWidth * 0.25, windowHeight * 0.483);
+      sldrtext =text('Timing: '+str(sldrtiming.value()), lvl._ajustex-(lvl.tamcasilla*3), lvl._ajustey+(1.8*lvl.tamcasilla));
   
       //Imprimir el nivel
       lvl.dibujar();
@@ -893,12 +938,17 @@ function keyPressed(){
         lvl.tablero[px][py].inicializar();
       break;
       case(83): //S
+      if (!lvl.hasstart()){
         lvl.tablero[px][py].tipo=2;
         lvl.tablero[px][py].inicializar();
+      }
+        
       break;
       case(70): //F
+      if (!lvl.hasfinish()){
         lvl.tablero[px][py].tipo=3;
         lvl.tablero[px][py].inicializar();
+      }
       break;
       default:
         break;

@@ -36,7 +36,7 @@ let sldrtiming;
 let timingtxt;
 
 //Request object
-let request = new XMLHttpRequest();
+//let request = new XMLHttpRequest();
 
 //Clase principal
 class nivel {
@@ -273,6 +273,7 @@ function preload() { //Precarga de los archivos multimedia
   s_miss= loadSound('media/combobreak.wav');
   tutogame=loadImage('media/tutorialgame.png');
   tutoedit=loadImage('media/tutorialeditor.png');
+  clvl =loadJSON('/levels/made/levels.json');
 }
 
 function setup() {
@@ -326,9 +327,9 @@ function windowResized() {
 async function loadLevel(n,mode){
   switch(mode){
     case(0): //Carga JSON
-      request.open("GET", "/levels/made/levels.json", false);
-      request.send(null);
-      clvl = JSON.parse(request.responseText);
+      //request.open("GET", "/levels/made/levels.json", false);
+      //request.send(null);
+      //clvl = JSON.parse(request.responseText);
       try{
       clvl= (clvl.level[n]);
       inicializarlvl(clvl.x, clvl.y, clvl.layout,clvl.tamcasilla,clvl.timing);

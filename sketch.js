@@ -19,6 +19,7 @@ let pc;           //Diccionario donde se guarda el color del jugador
 let combo="Bien"; //Control del movimiendo valido
 let clvl;         // Objeto donde se guarda el JSON para carga de nivel
 let nlvl=0;       //Contador de nivel para carga sequencial de niveles
+let lvls;
 
 //Variables de sonido
 let s_zeta;
@@ -273,7 +274,7 @@ function preload() { //Precarga de los archivos multimedia
   s_miss= loadSound('media/combobreak.wav');
   tutogame=loadImage('media/tutorialgame.png');
   tutoedit=loadImage('media/tutorialeditor.png');
-  clvl =loadJSON('levels/levels.json');
+  lvls =loadJSON('levels/levels.json');
 }
 
 function setup() {
@@ -286,7 +287,6 @@ function setup() {
   height = windowHeight;
 
   //Cargo nivel inicial
- 
   //Inicializar el Player Color (Depende de si el movimiento del jugador es valido o no)
   pc = {'Bien' : 'darkorchid' , 'mal' : 'red'}
 
@@ -327,6 +327,7 @@ function windowResized() {
 async function loadLevel(n,mode){
   switch(mode){
     case(0): //Carga JSON
+      clvl=lvls;
       //request.open("GET", "/levels/made/levels.json", false);
       //request.send(null);
       //clvl = JSON.parse(request.responseText);

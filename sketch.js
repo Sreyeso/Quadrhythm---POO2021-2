@@ -17,9 +17,9 @@ let gy;           //Coordenada en y de la meta
 let lvl;          //Objeto donde se guarda el nivel actual (modo jugar)
 let pc;           //Diccionario donde se guarda el color del jugador
 let combo="Bien"; //Control del movimiendo valido
-let clvl;         // Objeto donde se guarda el JSON para carga de nivel
+let clvl;         //Objeto donde se guarda el JSON para carga de nivel
 let nlvl=0;       //Contador de nivel para carga sequencial de niveles
-let lvls;
+let lvls;         //Pre-carga de los niveles de JSON a Objeto
 
 //Variables de sonido
 let s_zeta;
@@ -455,17 +455,22 @@ async function saveLevel() {
             let clayout = [];         
             let cvalcas;
             let ccas;
+            let coutput;
+            let cloutput = [];
             for (let i = 0; i < clvl.y; i++) {
               for (let j = 0; j < clvl.x; j++) {
                 ccas = clvl.tablero[i][j];
+                coutput = join(['"',str(ccas.tipo), str(ccas.n), str(ccas.objeto),'"'],"");
                 cvalcas = join([str(ccas.tipo), str(ccas.n), str(ccas.objeto)], "");
                 clayout.push(cvalcas);
+                cloutput.push(coutput);
+
               }
             }
             game='0';
             inicializarlvl(clvl.x, clvl.y, clayout, 45, clvl.timing);
             game='1';
-            alert(('"x":' + clvl.x + ',' + '"y": ' + clvl.y +','+ '"layout": ' + join([clayout,'",']) +','+ '"tamcasilla": ' + 45 +','+'"timing": '+ clvl.timing));
+            alert(('"x":' + clvl.x + ',' + '"y": ' + clvl.y +','+ '"layout": ' + join([cloutput]) +','+ '"tamcasilla": ' + 45 +','+'"timing": '+ clvl.timing));
             //Ranking dinamico
             score.show();
           }

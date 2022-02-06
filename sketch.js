@@ -1,12 +1,8 @@
 //Variables gráficas
 let width;        //Ancho de la ventana
 let height;       //Largo de la ventana
-let x;
-let y;
-
-let tutogame;
-let tutoedit;
-let escfla=false;
+let x;            //Imprimir el jugador en la coordenada
+let y;            //Imprimir el jugador en la coordenada
 
 //Variables del juego
 let game='0';     //0-menu inicial 1-juego 2-editor 3-exit
@@ -20,13 +16,18 @@ let combo="Bien"; //Control del movimiendo valido
 let clvl;         //Objeto donde se guarda el JSON para carga de nivel
 let nlvl=0;       //Contador de nivel para carga sequencial de niveles
 let lvls;         //Pre-carga de los niveles de JSON a Objeto
+let escfla=false; //Indica si se presiono ESC para ver los tutoriales
 
-//Variables de sonido
+//Variables multimedia
+//Sonido
 let s_zeta;
 let s_equis;
 let s_fin;
 let s_normal;
 let s_miss;
+//Imagenes
+let tutogame;    
+let tutoedit;
 
 //Elementos DOM
 let canvas;
@@ -35,9 +36,6 @@ let score;
 let exportlvl;
 let sldrtiming;
 let timingtxt;
-
-//Request object
-//let request = new XMLHttpRequest();
 
 //Clase principal
 class nivel {
@@ -185,7 +183,6 @@ class nivel {
     return false;
   }
 }
-
 //Clase secundaria
 class casilla {
   constructor(tipo, numero, objeto) {
@@ -257,80 +254,21 @@ class casilla {
   }
 }
 
+//Funciones propias
+
+//Sobreescribe la variable lvl donde guarda las propiedades del nivel a mostrar
 function inicializarlvl(filas, columnas, layout, tamcasilla,timing) {
   lvl = new nivel(filas, columnas, layout, tamcasilla,timing);
-  px = lvl.xini;
+  px = lvl.xini; 
   py = lvl.yini;
   gx = lvl.xfin;
   gy = lvl.yfin;
-}
-
-function preload() { //Precarga de los archivos multimedia
-  soundFormats('wav');
-  s_zeta= loadSound('media/z.wav');
-  s_equis= loadSound('media/x.wav');
-  s_fin= loadSound('media/fin.wav');
-  s_normal= loadSound('media/normal.wav');
-  s_miss= loadSound('media/combobreak.wav');
-  tutogame=loadImage('media/tutorialgame.png');
-  tutoedit=loadImage('media/tutorialeditor.png');
-  lvls =loadJSON('levels/levels.json');
-}
-
-function setup() {
-
-  frameRate(60);
-  //Ajuste del canvas por posicion absoluta
-  canvas = createCanvas(windowWidth, windowHeight);
-  background('mediumpurple');
-  width = windowWidth;
-  height = windowHeight;
-
-  //Cargo nivel inicial
-  //Inicializar el Player Color (Depende de si el movimiento del jugador es valido o no)
-  pc = {'Bien' : 'darkorchid' , 'mal' : 'red'}
-
-  //Volumen
-  outputVolume(0.2);
-
-   //Elementos DOM
-  score = createElement('h1',"");
-  score.hide();
-    //boton exportar
-  exportlvl=createButton('Exportar');
-  exportlvl.position(0,0);
-  exportlvl.hide();
-  exportlvl.mouseClicked(saveLevel);
-    //slider timing
-  sldrtiming = createSlider(50,300,150,50);
-  sldrtiming.position(0,0);
-  sldrtiming.style('width', '100px');
-  sldrtiming.hide();
-  //texto slider timing
-  timingtxt = createElement('p'," ");
-  timingtxt.position(0,0);
-  timingtxt.hide();
-  showMenu();
-  //Volumen
-  outputVolume(0.2);
-  inicializarlvl(1,1,["20n"],45,150);
-
-  
-}
-
-//Ajuste dinamico de la distribución
-function windowResized() {
-  width = windowWidth;
-  height = windowHeight;
 }
 //Carga de nivel con 2 opciones, desde JSON y desde localstorage
 async function loadLevel(n,mode){
   switch(mode){
     case(0): //Carga JSON
       clvl=lvls;
-      //request.open("GET", "/levels/made/levels.json", false);
-      //request.send(null);
-      //clvl = JSON.parse(request.responseText);
       try{
       clvl= (clvl.level[n]);
       inicializarlvl(clvl.x, clvl.y, clvl.layout,clvl.tamcasilla,clvl.timing);
@@ -488,10 +426,11 @@ async function saveLevel() {
     
   } 
 }
+//Muestra el menu principal
 function showMenu() {
   game = '0';
   menu = Swal.fire({
-    title: 'Not ADOFAI WIP',
+    title: 'Quadrhythm',
     showDenyButton: true,
     showCancelButton: true,
     reverseButtons: true,
@@ -503,17 +442,19 @@ function showMenu() {
     cancelButtonColor: 'magenta',
   }).then((result) => {
     if (result.isConfirmed) {
+      escfla=true;
       loadLevel(nlvl,0);
       game = '1';
       //Ranking dinamico
       score.show();
     }
     if (result.isDismissed) {
+      game = '1';
       inicializarlvl(1, 2,["30n","20n"], 45,150);
+      escfla=true;
       lvl.timing=0;
       nlvl=-1;
       loadLevel(nlvl,1);
-      game = '1';
 
   
     }
@@ -521,17 +462,20 @@ function showMenu() {
       startEditor();
       escfla=true;
       game = '2';
+      
     }
   });
 }
-function genArray(x) {   // Generador de arreglo para tablero vacio
+// Generador de arreglo para tablero vacio
+function genArray(x) {  
   let array = [];
   for (let i = 0; i < x; i++) {
     array[i] = "00n";
   }
   return array;
 }
-async function startEditor(){   // Empieza el editor de niveles
+// Empieza el editor de niveles
+async function startEditor(){   
   let {value:elx}=await Swal.fire({
     title: 'Escoje valor x',
     input: 'select',
@@ -607,28 +551,75 @@ async function startEditor(){   // Empieza el editor de niveles
   sldrtiming.show();
   timingtxt.show();
 }
-
-
-function miss(){  //Movimiento invalido
+//Movimiento invalido
+function miss(){  
   lvl.movfla=true;
   s_miss.play();
   lvl.misses+=1;
   combo='mal';
 }
-
-function hit(){  //Movimiento permitido
+//Movimiento permitido
+function hit(){  
   lvl.movfla=true;
   lvl.timer=lvl.timing;
   combo='Bien';
 }
 
-//0-menu inicial 1-juego 2-editor 3-exit
-function draw() {
+//Funciones definidas por P5
 
-  /* image(menu,windowWidth * 0.4, windowHeight * 0.2);
-  menu.background('red');
-  menu.text('Menu Principal',10,10); */
-  switch(game){//Control del juego
+function preload() { 
+  soundFormats('wav');
+  s_zeta= loadSound('media/z.wav');
+  s_equis= loadSound('media/x.wav');
+  s_fin= loadSound('media/fin.wav');
+  s_normal= loadSound('media/normal.wav');
+  s_miss= loadSound('media/combobreak.wav');
+  tutogame=loadImage('media/tutorialgame.png');
+  tutoedit=loadImage('media/tutorialeditor.png');
+  lvls =loadJSON('levels/levels.json');
+}
+function setup() {
+
+  frameRate(60);
+  //Ajuste del canvas por posicion absoluta
+  canvas = createCanvas(windowWidth, windowHeight);
+  background('mediumpurple');
+  width = windowWidth;
+  height = windowHeight;
+
+  //Cargo nivel inicial
+  //Inicializar el Player Color (Depende de si el movimiento del jugador es valido o no)
+  pc = {'Bien' : 'darkorchid' , 'mal' : 'red'}
+
+  //Volumen
+  outputVolume(0.2);
+
+   //Elementos DOM
+  score = createElement('h1',"");
+  score.hide();
+    //boton exportar
+  exportlvl=createButton('Exportar');
+  exportlvl.position(0,0);
+  exportlvl.hide();
+  exportlvl.mouseClicked(saveLevel);
+    //slider timing
+  sldrtiming = createSlider(50,300,150,50);
+  sldrtiming.position(0,0);
+  sldrtiming.style('width', '100px');
+  sldrtiming.hide();
+  //texto slider timing
+  timingtxt = createElement('p'," ");
+  timingtxt.position(0,0);
+  timingtxt.hide();
+  showMenu();
+  //Volumen
+  outputVolume(0.2);
+  inicializarlvl(1,1,["20n"],45,150);
+
+  
+}
+function draw() {
+  switch(game){//Control del juego //0-menu inicial 1-juego 2-editor 3-exit
     case('0'): //Volver al menu
       clear();
       background('mediumpurple');
@@ -636,6 +627,7 @@ function draw() {
       sldrtiming.hide();
       timingtxt.hide();
       score.hide();
+      
     break;
     case('1'): //Juego
     background('mediumpurple');
@@ -793,7 +785,6 @@ function draw() {
   }
 
 }
-
 function keyPressed(){
   switch(game){//Control del juego
                 //Control del jugador
@@ -1030,4 +1021,8 @@ function keyPressed(){
     }
     break;
   }
+}
+function windowResized() {
+  width = windowWidth;
+  height = windowHeight;
 }
